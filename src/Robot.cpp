@@ -5,8 +5,7 @@
 #include "WPILib.h"
 #include "../util/830utilities.h"
 
-class Robot: public IterativeRobot
-{
+class Robot: public IterativeRobot{
 private:
 
 	//PWM pins
@@ -15,8 +14,14 @@ private:
 	static const int BACK_LEFT_PWM = 3;
 	static const int BACK_RIGHT_PWM = 4;
 
-	RobotDrive *drive;
+	static const int SWORD_CLAMP_PWM = 5;
+	static const int CLAMP_POT_ANALOG = 0;
+	static const int SWORD_SWITCH_DIO = 0;
 
+	RobotDrive *drive;
+	Victor * clamp;
+	AnalogPotentiometer * clamp_sensor;
+	DigitalInput * sword_switch;
 	GamepadF310 *pilot;
 
 	void RobotInit()
@@ -28,6 +33,9 @@ private:
 				new Victor(BACK_RIGHT_PWM)
 		);
 
+		clamp = new Victor(SWORD_CLAMP_PWM);
+		clamp_sensor = new AnalogPotentiometer(CLAMP_POT_ANALOG);
+		sword_switch = new DigitalInput(SWORD_SWITCH_DIO);
 		pilot = new GamepadF310(0);
 
 	}
@@ -49,7 +57,15 @@ private:
 
 	void TeleopPeriodic()
 	{
-		drive->TankDrive(0.0,0.0);
+		drive->TankDrive(pilot->LeftY(), pilot->RightY());
+		SmartDashboard::PutNumber("Potentiometer Value",clamp_sensor->Get());
+		SmartDashboard::PutBoolean("Is switch switched?",sword_switch->Get());
+		if (pilot->ButtonState(GamepadF310::buttonA)) {
+			clamp -> Set(0.4);
+		}
+		else if (pilot->ButtonState(GamepadF310::buttonB)){
+			clamp -> Set(-0.4);
+		}
 	}
 
 	void TestPeriodic()
