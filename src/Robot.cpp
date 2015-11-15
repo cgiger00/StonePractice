@@ -5,6 +5,18 @@
 #include "WPILib.h"
 #include "../util/830utilities.h"
 
+float accel(float current, float target, int ticks) {
+	if (abs(target) <= 0.05) {
+		target = 0;
+	}
+	if (time == 0) {
+		return target;
+	}
+
+
+	float max_delta = 1.0 / ticks;
+}
+
 class Robot: public IterativeRobot{
 private:
 
@@ -60,10 +72,10 @@ private:
 		drive->TankDrive(pilot->LeftY(), pilot->RightY());
 		SmartDashboard::PutNumber("Potentiometer Value",clamp_sensor->Get());
 		SmartDashboard::PutBoolean("Is switch switched?",sword_switch->Get());
-		if (pilot->ButtonState(GamepadF310::buttonA)) {
+		if (pilot->ButtonState(F310Buttons::A)) {
 			clamp -> Set(0.4);
 		}
-		else if (pilot->ButtonState(GamepadF310::buttonB)){
+		else if (pilot->ButtonState(F310Buttons::B)){
 			clamp -> Set(-0.4);
 		}
 	}
