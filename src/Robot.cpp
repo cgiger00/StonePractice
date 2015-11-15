@@ -5,18 +5,6 @@
 #include "WPILib.h"
 #include "../util/830utilities.h"
 
-float accel(float current, float target, int ticks) {
-	if (abs(target) <= 0.05) {
-		target = 0;
-	}
-	if (time == 0) {
-		return target;
-	}
-
-
-	float max_delta = 1.0 / ticks;
-}
-
 class Robot: public IterativeRobot{
 private:
 
@@ -36,8 +24,13 @@ private:
 	DigitalInput * sword_switch;
 	GamepadF310 *pilot;
 
+	float left_speed, right_speed;
+	static const int TICKS_TO_ACCEL = 50;
+
 	void RobotInit()
 	{
+		left_speed = 0;
+		right_speed = 0;
 		drive = new RobotDrive(
 				new Victor(FRONT_LEFT_PWM),
 				new Victor(BACK_LEFT_PWM),
@@ -69,7 +62,9 @@ private:
 
 	void TeleopPeriodic()
 	{
-		drive->TankDrive(pilot->LeftY(), pilot->RightY());
+		left_speed = accel(left_speed, pilot->LeftY(), TICKS_TO_ACCEL);
+		right_speed = accel(right_speed, pilot->RightY(), TICKS_TO_ACCEL);
+		drive->TankDrive(left_speed, right_speed);
 		SmartDashboard::PutNumber("Potentiometer Value",clamp_sensor->Get());
 		SmartDashboard::PutBoolean("Is switch switched?",sword_switch->Get());
 		if (pilot->ButtonState(F310Buttons::A)) {
