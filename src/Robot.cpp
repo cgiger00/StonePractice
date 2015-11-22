@@ -4,6 +4,7 @@
 
 #include "WPILib.h"
 #include "../util/830utilities.h"
+#include "Clamp.h"
 
 class Robot: public IterativeRobot{
 private:
@@ -15,13 +16,13 @@ private:
 	static const int BACK_RIGHT_PWM = 4;
 
 	static const int SWORD_CLAMP_PWM = 5;
-	static const int CLAMP_POT_ANALOG = 0;
+	static const int CLAMP_SWITCH_DIO = 1;
 	static const int SWORD_SWITCH_DIO = 0;
 
 	RobotDrive *drive;
-	Victor * clamp;
-	AnalogPotentiometer * clamp_sensor;
-	DigitalInput * sword_switch;
+
+	Clamp * clamp;
+
 	GamepadF310 *pilot;
 
 	float left_speed, right_speed;
@@ -37,10 +38,12 @@ private:
 				new Victor(FRONT_RIGHT_PWM),
 				new Victor(BACK_RIGHT_PWM)
 		);
+		clamp = new Clamp(
+				new Victor(SWORD_CLAMP_PWM),
+				new DigitalInput(CLAMP_SWITCH_DIO),
+				new DigitalInput(SWORD_SWITCH_DIO)
+		);
 
-		clamp = new Victor(SWORD_CLAMP_PWM);
-		clamp_sensor = new AnalogPotentiometer(CLAMP_POT_ANALOG);
-		sword_switch = new DigitalInput(SWORD_SWITCH_DIO);
 		pilot = new GamepadF310(0);
 
 	}
@@ -65,14 +68,17 @@ private:
 		left_speed = accel(left_speed, pilot->LeftY(), TICKS_TO_ACCEL);
 		right_speed = accel(right_speed, pilot->RightY(), TICKS_TO_ACCEL);
 		drive->TankDrive(left_speed, right_speed);
-		SmartDashboard::PutNumber("Potentiometer Value",clamp_sensor->Get());
-		SmartDashboard::PutBoolean("Is switch switched?",sword_switch->Get());
+		SmartDashboard::PutBoolean("clamp open", clamp->isOpen());
+		SmartDashboard::PutBoolean("sword in", clamp->isSwordIn());
+
 		if (pilot->ButtonState(F310Buttons::A)) {
-			clamp -> Set(0.4);
+			clamp->open();
 		}
 		else if (pilot->ButtonState(F310Buttons::B)){
-			clamp -> Set(-0.4);
+			clamp->close();
 		}
+
+		clamp->update();
 	}
 
 	void TestPeriodic()
