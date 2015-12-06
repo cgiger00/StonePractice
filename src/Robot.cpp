@@ -91,7 +91,8 @@ private:
 
 	void TeleopPeriodic()
 	{
-		auto new_mode = *(drive_mode_t*)drive_mode_chooser->GetSelected();
+		auto new_mode_p = (drive_mode_t*)drive_mode_chooser->GetSelected();
+		auto new_mode = new_mode_p ? *new_mode_p : ARCADE_DRIVE;
 		if (new_mode != drive_mode)
 			SetDriveMode(new_mode);
 		if (drive_mode == TANK_DRIVE) {
