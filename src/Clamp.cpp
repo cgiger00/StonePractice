@@ -13,7 +13,7 @@ Clamp::Clamp(Victor * clamp, DigitalInput * fullOpen, DigitalInput * swordIn)
 }
 
 void Clamp::update(){
-	if(( (isOpen() && clampSpeed == OPEN_CLOSE_SPEED)) || timer->Get() > 1.0){
+	if(( (isOpen() && clampSpeed == OPEN_CLOSE_SPEED)) || timer->Get() > 2.0){
 		stop();
 		timer->Stop();
 		timer->Reset();
