@@ -39,6 +39,10 @@ private:
 
 	static constexpr float MOVE_SPEED_LIMIT = 0.6;
 
+	IMAQdxSession img_session;
+	Image *img_frame;
+	IMAQdxError img_error;
+
 	void RobotInit()
 	{
 		SetDriveMode(ARCADE_DRIVE);
@@ -62,7 +66,18 @@ private:
 		drive_mode_chooser = new SendableChooser;
 		drive_mode_chooser->AddObject("tank", new drive_mode_t(TANK_DRIVE));
 		drive_mode_chooser->AddObject("arcade", new drive_mode_t(ARCADE_DRIVE));
-		SmartDashboard::PutData("drive mode", drive_mode_chooser);
+
+		img_frame = imaqCreateImage(IMAQ_IMAGE_RGB, 0);
+		//the camera name (ex "cam0") can be found through the roborio web interface
+		img_session = 0;
+		img_error = IMAQdxOpenCamera("cam0", IMAQdxCameraControlModeController, &img_session);
+		if(img_error != IMAQdxErrorSuccess) {
+			DriverStation::ReportError("IMAQdxOpenCamera error: " + std::to_string((long)img_error) + "\n");
+		}
+		img_error = IMAQdxConfigureGrab(img_session);
+		if(img_error != IMAQdxErrorSuccess) {
+			DriverStation::ReportError("IMAQdxConfigureGrab error: " + std::to_string((long)img_error) + "\n");
+		}
 
 	}
 
@@ -87,6 +102,7 @@ private:
 
 	void TeleopInit()
 	{
+		IMAQdxStartAcquisition(img_session);
 	}
 
 	void TeleopPeriodic()
@@ -121,11 +137,25 @@ private:
 		}
 
 		clamp->update();
+		IMAQdxGrab(img_session, img_frame, true, NULL);
+		if(img_error != IMAQdxErrorSuccess) {
+			DriverStation::ReportError("IMAQdxGrab error: " + std::to_string((long)img_error) + "\n");
+		} else {
+			imaqDrawShapeOnImage(img_frame, img_frame, { 10, 10, 100, 100 }, DrawMode::IMAQ_DRAW_VALUE, ShapeMode::IMAQ_SHAPE_OVAL, 0.0f);
+			CameraServer::GetInstance()->SetImage(img_frame);
+		}
+
 	}
 
 	void TestPeriodic()
 	{
 
+	}
+
+	void DisabledInit() {
+		SmartDashboard::PutData("drive mode", drive_mode_chooser);
+		SmartDashboard::PutString("test", "test");
+		IMAQdxStopAcquisition(img_session);
 	}
 };
 
