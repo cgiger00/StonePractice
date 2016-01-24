@@ -21,6 +21,8 @@ private:
 	static const int CLAMP_SWITCH_DIO = 1;
 	static const int SWORD_SWITCH_DIO = 0;
 
+	static const int GYRO_ANALOG = 0;
+
 	RobotDrive *drive;
 
 	Clamp * clamp;
@@ -30,6 +32,7 @@ private:
 	PowerDistributionPanel * pdp;
 
 	BuiltInAccelerometer * acceler;
+	Gyro  * gyro;
 
 	enum drive_mode_t { TANK_DRIVE, ARCADE_DRIVE };
 	drive_mode_t drive_mode;
@@ -61,6 +64,7 @@ private:
 				new DigitalInput(CLAMP_SWITCH_DIO),
 				new DigitalInput(SWORD_SWITCH_DIO)
 		);
+		gyro = new Gyro(GYRO_ANALOG);
 
 		pdp= new PowerDistributionPanel;
 
@@ -82,8 +86,6 @@ private:
 			DriverStation::ReportError("IMAQdxConfigureGrab error: " + std::to_string((long)img_error) + "\n");
 		}
 		acceler = new BuiltInAccelerometer;
-
-
 	}
 
 	void AutonomousInit()
@@ -130,6 +132,9 @@ private:
 		}
 		SmartDashboard::PutBoolean("clamp open", clamp->isOpen());
 		SmartDashboard::PutBoolean("sword in", clamp->isSwordIn());
+
+		SmartDashboard::PutNumber("gyroscope", gyro->GetAngle());
+
 //		for (uint8 i = 0; i <= 15; ++i)
 //			SmartDashboard::PutNumber(std::string("current #") + std::to_string(i), pdp->GetCurrent(i));
 		SmartDashboard::PutNumber("Current", pdp->GetTotalCurrent());
