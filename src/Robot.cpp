@@ -6,6 +6,7 @@
 #include "../util/830utilities.h"
 #include "Clamp.h"
 
+
 class Robot: public IterativeRobot{
 private:
 
@@ -28,13 +29,15 @@ private:
 
 	PowerDistributionPanel * pdp;
 
+	BuiltInAccelerometer * acceler;
+
 	enum drive_mode_t { TANK_DRIVE, ARCADE_DRIVE };
 	drive_mode_t drive_mode;
 	// tank drive
 	float left_speed, right_speed;
 	// arcade drive
 	float move_speed, rot_speed;
-	static const int TICKS_TO_ACCEL = 50;
+	static const int TICKS_TO_ACCEL = 10;
 	SendableChooser *drive_mode_chooser;
 
 	static constexpr float MOVE_SPEED_LIMIT = 0.6;
@@ -78,6 +81,8 @@ private:
 		if(img_error != IMAQdxErrorSuccess) {
 			DriverStation::ReportError("IMAQdxConfigureGrab error: " + std::to_string((long)img_error) + "\n");
 		}
+		acceler = new BuiltInAccelerometer;
+
 
 	}
 
@@ -117,10 +122,10 @@ private:
 			drive->TankDrive(left_speed, right_speed);
 		}
 		else {
-			move_speed = accel(move_speed, pilot->LeftY(), TICKS_TO_ACCEL);
 //			rot_speed = accel(rot_speed, pilot->RightX(), TICKS_TO_ACCEL);
 //			SmartDashboard::PutNumber("rotation speed", rot_speed);
 			rot_speed = pilot->RightX();
+			move_speed = accel(move_speed, pilot->LeftY(), TICKS_TO_ACCEL);
 			drive->ArcadeDrive(move_speed * MOVE_SPEED_LIMIT, -rot_speed * MOVE_SPEED_LIMIT, false);
 		}
 		SmartDashboard::PutBoolean("clamp open", clamp->isOpen());
@@ -144,6 +149,7 @@ private:
 			imaqDrawShapeOnImage(img_frame, img_frame, { 10, 10, 100, 100 }, DrawMode::IMAQ_DRAW_VALUE, ShapeMode::IMAQ_SHAPE_OVAL, 0.0f);
 			CameraServer::GetInstance()->SetImage(img_frame);
 		}
+		SmartDashboard::PutNumber("accelerometer Z", acceler->GetZ());
 
 	}
 
