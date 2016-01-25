@@ -20,9 +20,11 @@ private:
 	static const uint8 SWORD_CLAMP_CHANNEL = 13;
 	static const int CLAMP_SWITCH_DIO = 1;
 	static const int SWORD_SWITCH_DIO = 0;
+	static const int FLY_WHEEL_PWM = 5;
 
-	static const int GYRO_ANALOG = 0;
-
+	//static const int GYRO_ANALOG = 0;
+	static const int ENCODER_DIO_A = 2;
+	static const int ENCODER_DIO_B = 3;
 	RobotDrive *drive;
 
 	Clamp * clamp;
@@ -32,8 +34,11 @@ private:
 	PowerDistributionPanel * pdp;
 
 	BuiltInAccelerometer * acceler;
-	Gyro  * gyro;
+	//Gyro  * gyro;
 
+	VictorSP * flywheel;
+
+	Encoder * encoder;
 	enum drive_mode_t { TANK_DRIVE, ARCADE_DRIVE };
 	drive_mode_t drive_mode;
 	// tank drive
@@ -43,7 +48,7 @@ private:
 	static const int TICKS_TO_ACCEL = 10;
 	SendableChooser *drive_mode_chooser;
 
-	static constexpr float MOVE_SPEED_LIMIT = 0.6;
+	static constexpr float MOVE_SPEED_LIMIT = 1.0;
 
 	IMAQdxSession img_session;
 	Image *img_frame;
@@ -64,11 +69,14 @@ private:
 				new DigitalInput(CLAMP_SWITCH_DIO),
 				new DigitalInput(SWORD_SWITCH_DIO)
 		);
-		gyro = new Gyro(GYRO_ANALOG);
 
 		pdp= new PowerDistributionPanel;
 
 		pilot = new GamepadF310(0);
+
+		//gyro = new Gyro(GYRO_ANALOG);
+
+		flywheel = new VictorSP(FLY_WHEEL_PWM);
 
 		drive_mode_chooser = new SendableChooser;
 		drive_mode_chooser->AddObject("tank", new drive_mode_t(TANK_DRIVE));
@@ -86,6 +94,8 @@ private:
 			DriverStation::ReportError("IMAQdxConfigureGrab error: " + std::to_string((long)img_error) + "\n");
 		}
 		acceler = new BuiltInAccelerometer;
+
+		encoder = new Encoder(ENCODER_DIO_A, ENCODER_DIO_B);
 	}
 
 	void AutonomousInit()
@@ -133,7 +143,7 @@ private:
 		SmartDashboard::PutBoolean("clamp open", clamp->isOpen());
 		SmartDashboard::PutBoolean("sword in", clamp->isSwordIn());
 
-		SmartDashboard::PutNumber("gyroscope", gyro->GetAngle());
+		//SmartDashboard::PutNumber("gyroscope", gyro->GetAngle());
 
 //		for (uint8 i = 0; i <= 15; ++i)
 //			SmartDashboard::PutNumber(std::string("current #") + std::to_string(i), pdp->GetCurrent(i));
@@ -155,6 +165,11 @@ private:
 			CameraServer::GetInstance()->SetImage(img_frame);
 		}
 		SmartDashboard::PutNumber("accelerometer Z", acceler->GetZ());
+
+		SmartDashboard::PutNumber("Encoder", encoder->Get());
+
+		flywheel->Set(pilot->RightTrigger());
+		SmartDashboard::PutNumber("Right Trigger:", pilot->RightTrigger());
 
 	}
 
