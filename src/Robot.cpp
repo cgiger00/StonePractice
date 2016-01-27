@@ -20,7 +20,7 @@ private:
 	static const uint8 SWORD_CLAMP_CHANNEL = 13;
 	static const int CLAMP_SWITCH_DIO = 1;
 	static const int SWORD_SWITCH_DIO = 0;
-	static const int FLY_WHEEL_PWM = 5;
+	static const int FLY_WHEEL_PWM = 6;
 
 	//static const int GYRO_ANALOG = 0;
 	static const int ENCODER_DIO_A = 2;
