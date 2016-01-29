@@ -169,7 +169,12 @@ private:
 		SmartDashboard::PutNumber("Encoder", encoder->Get());
 
 		flywheel->Set(pilot->RightTrigger());
-		SmartDashboard::PutNumber("Right Trigger:", pilot->RightTrigger());
+
+		if (pilot->LeftTrigger() != 0)
+			flywheel->Set(-pilot->LeftTrigger());
+
+
+		SmartDashboard::PutNumber("Left Trigger:", pilot->LeftTrigger());
 
 	}
 
