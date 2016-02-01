@@ -22,7 +22,7 @@ private:
 	static const int SWORD_SWITCH_DIO = 0;
 	static const int FLY_WHEEL_PWM = 6;
 
-	//static const int GYRO_ANALOG = 0;
+	static const int GYRO_ANALOG = 0;
 	static const int ENCODER_DIO_A = 2;
 	static const int ENCODER_DIO_B = 3;
 	RobotDrive *drive;
@@ -34,7 +34,7 @@ private:
 	PowerDistributionPanel * pdp;
 
 	BuiltInAccelerometer * acceler;
-	//Gyro  * gyro;
+	AnalogGyro  * gyro;
 
 	VictorSP * flywheel;
 
@@ -74,7 +74,7 @@ private:
 
 		pilot = new GamepadF310(0);
 
-		//gyro = new Gyro(GYRO_ANALOG);
+		gyro = new AnalogGyro(GYRO_ANALOG);
 
 		flywheel = new VictorSP(FLY_WHEEL_PWM);
 
@@ -143,7 +143,7 @@ private:
 		SmartDashboard::PutBoolean("clamp open", clamp->isOpen());
 		SmartDashboard::PutBoolean("sword in", clamp->isSwordIn());
 
-		//SmartDashboard::PutNumber("gyroscope", gyro->GetAngle());
+		SmartDashboard::PutNumber("gyroscope", gyro->GetAngle());
 
 //		for (uint8 i = 0; i <= 15; ++i)
 //			SmartDashboard::PutNumber(std::string("current #") + std::to_string(i), pdp->GetCurrent(i));
