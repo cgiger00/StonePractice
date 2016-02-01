@@ -25,6 +25,7 @@ private:
 	static const int GYRO_ANALOG = 0;
 	static const int ENCODER_DIO_A = 2;
 	static const int ENCODER_DIO_B = 3;
+
 	RobotDrive *drive;
 
 	Clamp * clamp;
@@ -82,7 +83,8 @@ private:
 		drive_mode_chooser->AddObject("tank", new drive_mode_t(TANK_DRIVE));
 		drive_mode_chooser->AddObject("arcade", new drive_mode_t(ARCADE_DRIVE));
 
-		img_frame = imaqCreateImage(IMAQ_IMAGE_RGB, 0);
+		img_frame = imaqCreateImage(IMAQ_IMAGE_RGB, 0),
+					imaqCreateImage(IMAQ_IMAGE_RGB, 1);
 		//the camera name (ex "cam0") can be found through the roborio web interface
 		img_session = 0;
 		img_error = IMAQdxOpenCamera("cam0", IMAQdxCameraControlModeController, &img_session);
@@ -124,6 +126,8 @@ private:
 
 	void TeleopPeriodic()
 	{
+		bool cam_switcher = true;
+
 		auto new_mode_p = (drive_mode_t*)drive_mode_chooser->GetSelected();
 		auto new_mode = new_mode_p ? *new_mode_p : ARCADE_DRIVE;
 		if (new_mode != drive_mode)
@@ -157,19 +161,43 @@ private:
 		}
 
 		clamp->update();
-		IMAQdxGrab(img_session, img_frame, true, NULL);
-		if(img_error != IMAQdxErrorSuccess) {
-			DriverStation::ReportError("IMAQdxGrab error: " + std::to_string((long)img_error) + "\n");
-		} else {
-			imaqDrawShapeOnImage(img_frame, img_frame, { 10, 10, 100, 100 }, DrawMode::IMAQ_DRAW_VALUE, ShapeMode::IMAQ_SHAPE_OVAL, 0.0f);
-			CameraServer::GetInstance()->SetImage(img_frame);
+		if (pilot->ButtonState(F310Buttons::X)){
+			cam_switcher = true;
 		}
+		else if (pilot->ButtonState(F310Buttons::Y)){
+			cam_switcher = false;
+		}
+		if(cam_switcher == true){
+			IMAQdxGrab(img_session, img_frame, true, NULL);
+			if(img_error != IMAQdxErrorSuccess) {
+				DriverStation::ReportError("IMAQdxGrab error: " + std::to_string((long)img_error) + "\n");
+			} else {
+				imaqDrawShapeOnImage(img_frame, img_frame, { 10, 10, 100, 100 }, DrawMode::IMAQ_DRAW_VALUE, ShapeMode::IMAQ_SHAPE_OVAL, 0.0f);
+				CameraServer::GetInstance()->SetImage(img_frame);
+			}
+		}
+		if(cam_switcher == false){
+			IMAQdxGrab(img_session, img_frame, true, NULL);
+			if(img_error != IMAQdxErrorSuccess) {
+				DriverStation::ReportError("IMAQdxGrab error: " + std::to_string((long)img_error) + "\n");
+			} else {
+				imaqDrawShapeOnImage(img_frame, img_frame, { 10, 10, 100, 100 }, DrawMode::IMAQ_DRAW_VALUE, ShapeMode::IMAQ_SHAPE_OVAL, 0.0f);
+				CameraServer::GetInstance()->SetImage(img_frame);
+						}
+		}
+		SmartDashboard::PutBoolean("camera value", cam_switcher);
+
 		SmartDashboard::PutNumber("accelerometer Z", acceler->GetZ());
 
 		SmartDashboard::PutNumber("Encoder", encoder->Get());
 
 		flywheel->Set(pilot->RightTrigger());
-		SmartDashboard::PutNumber("Right Trigger:", pilot->RightTrigger());
+
+		if (pilot->LeftTrigger() != 0)
+			flywheel->Set(-pilot->LeftTrigger());
+
+
+		SmartDashboard::PutNumber("Left Trigger:", pilot->LeftTrigger());
 
 	}
 
