@@ -71,7 +71,7 @@ private:
 				new DigitalInput(SWORD_SWITCH_DIO)
 		);
 
-		pdp= new PowerDistributionPanel;
+		pdp = new PowerDistributionPanel;
 
 		pilot = new GamepadF310(0);
 
@@ -87,7 +87,7 @@ private:
 					imaqCreateImage(IMAQ_IMAGE_RGB, 1);
 		//the camera name (ex "cam0") can be found through the roborio web interface
 		img_session = 0;
-		img_error = IMAQdxOpenCamera("cam0", IMAQdxCameraControlModeController, &img_session);
+		img_error = IMAQdxOpenCamera("cam0", IMAQdxCameraControlModeController, &img_session), IMAQdxOpenCamera("cam1", IMAQdxCameraControlModeController, &img_session);
 		if(img_error != IMAQdxErrorSuccess) {
 			DriverStation::ReportError("IMAQdxOpenCamera error: " + std::to_string((long)img_error) + "\n");
 		}
@@ -167,7 +167,7 @@ private:
 		else if (pilot->ButtonState(F310Buttons::Y)){
 			cam_switcher = false;
 		}
-		if(cam_switcher == true){
+		/*if(cam_switcher == true){
 			IMAQdxGrab(img_session, img_frame, true, NULL);
 			if(img_error != IMAQdxErrorSuccess) {
 				DriverStation::ReportError("IMAQdxGrab error: " + std::to_string((long)img_error) + "\n");
@@ -177,6 +177,7 @@ private:
 			}
 		}
 		if(cam_switcher == false){
+		*/
 			IMAQdxGrab(img_session, img_frame, true, NULL);
 			if(img_error != IMAQdxErrorSuccess) {
 				DriverStation::ReportError("IMAQdxGrab error: " + std::to_string((long)img_error) + "\n");
@@ -184,8 +185,8 @@ private:
 				imaqDrawShapeOnImage(img_frame, img_frame, { 10, 10, 100, 100 }, DrawMode::IMAQ_DRAW_VALUE, ShapeMode::IMAQ_SHAPE_OVAL, 0.0f);
 				CameraServer::GetInstance()->SetImage(img_frame);
 						}
-		}
-		SmartDashboard::PutBoolean("camera value", cam_switcher);
+		//}
+		//SmartDashboard::PutBoolean("camera value", cam_switcher);
 
 		SmartDashboard::PutNumber("accelerometer Z", acceler->GetZ());
 
