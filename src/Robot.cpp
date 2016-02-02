@@ -51,9 +51,13 @@ private:
 
 	static constexpr float MOVE_SPEED_LIMIT = 1.0;
 
-	IMAQdxSession img_session;
-	Image *img_frame;
-	IMAQdxError img_error;
+	IMAQdxSession img_session1;
+	Image *img_frame1;
+	IMAQdxError img_error1;
+
+	IMAQdxSession img_session2;
+	Image *img_frame2;
+	IMAQdxError img_error2;
 
 	void RobotInit()
 	{
@@ -83,18 +87,30 @@ private:
 		drive_mode_chooser->AddObject("tank", new drive_mode_t(TANK_DRIVE));
 		drive_mode_chooser->AddObject("arcade", new drive_mode_t(ARCADE_DRIVE));
 
-		img_frame = imaqCreateImage(IMAQ_IMAGE_RGB, 0),
-					imaqCreateImage(IMAQ_IMAGE_RGB, 1);
+		img_frame1 = imaqCreateImage(IMAQ_IMAGE_RGB, 0);
+
 		//the camera name (ex "cam0") can be found through the roborio web interface
-		img_session = 0;
-		img_error = IMAQdxOpenCamera("cam0", IMAQdxCameraControlModeController, &img_session);
-		if(img_error != IMAQdxErrorSuccess) {
-			DriverStation::ReportError("IMAQdxOpenCamera error: " + std::to_string((long)img_error) + "\n");
+		img_session1 = 0;
+		img_error1 = IMAQdxOpenCamera("cam0", IMAQdxCameraControlModeController, &img_session1);
+		if(img_error1 != IMAQdxErrorSuccess) {
+			DriverStation::ReportError("IMAQdxOpenCamera error: " + std::to_string((long)img_error1) + "\n");
 		}
-		img_error = IMAQdxConfigureGrab(img_session);
-		if(img_error != IMAQdxErrorSuccess) {
-			DriverStation::ReportError("IMAQdxConfigureGrab error: " + std::to_string((long)img_error) + "\n");
+		img_error1 = IMAQdxConfigureGrab(img_session1);
+		if(img_error1 != IMAQdxErrorSuccess) {
+			DriverStation::ReportError("IMAQdxConfigureGrab error: " + std::to_string((long)img_error1) + "\n");
 		}
+
+		img_frame2 = imaqCreateImage(IMAQ_IMAGE_RGB, 1);
+		img_session2 = 1;
+		img_error2 = IMAQdxOpenCamera("cam1", IMAQdxCameraControlModeController, &img_session2);
+		if(img_error2 != IMAQdxErrorSuccess) {
+			DriverStation::ReportError("IMAQdxOpenCamera error: " + std::to_string((long)img_error2) + "\n");
+		}
+		img_error2 = IMAQdxConfigureGrab(img_session2);
+		if(img_error2 != IMAQdxErrorSuccess) {
+			DriverStation::ReportError("IMAQdxConfigureGrab error: " + std::to_string((long)img_error2) + "\n");
+		}
+
 		acceler = new BuiltInAccelerometer;
 
 		encoder = new Encoder(ENCODER_DIO_A, ENCODER_DIO_B);
@@ -121,13 +137,13 @@ private:
 
 	void TeleopInit()
 	{
-		IMAQdxStartAcquisition(img_session);
+		IMAQdxStartAcquisition(img_session1);
+		IMAQdxStartAcquisition(img_session2);
 	}
 
 	void TeleopPeriodic()
 	{
-		bool cam_switcher = true;
-
+		bool cam_switcher = false;
 		auto new_mode_p = (drive_mode_t*)drive_mode_chooser->GetSelected();
 		auto new_mode = new_mode_p ? *new_mode_p : ARCADE_DRIVE;
 		if (new_mode != drive_mode)
@@ -161,6 +177,7 @@ private:
 		}
 
 		clamp->update();
+
 		if (pilot->ButtonState(F310Buttons::X)){
 			cam_switcher = true;
 		}
@@ -168,24 +185,21 @@ private:
 			cam_switcher = false;
 		}
 		if(cam_switcher == true){
-			IMAQdxGrab(img_session, img_frame, true, NULL);
-			if(img_error != IMAQdxErrorSuccess) {
-				DriverStation::ReportError("IMAQdxGrab error: " + std::to_string((long)img_error) + "\n");
+			IMAQdxGrab(img_session1, img_frame1, true, NULL);
+			if(img_error1 != IMAQdxErrorSuccess) {
+				DriverStation::ReportError("IMAQdxGrab error: " + std::to_string((long)img_error1) + "\n");
 			} else {
-				imaqDrawShapeOnImage(img_frame, img_frame, { 10, 10, 100, 100 }, DrawMode::IMAQ_DRAW_VALUE, ShapeMode::IMAQ_SHAPE_OVAL, 0.0f);
-				CameraServer::GetInstance()->SetImage(img_frame);
+				CameraServer::GetInstance()->SetImage(img_frame1);
 			}
 		}
-		if(cam_switcher == false){
-			IMAQdxGrab(img_session, img_frame, true, NULL);
-			if(img_error != IMAQdxErrorSuccess) {
-				DriverStation::ReportError("IMAQdxGrab error: " + std::to_string((long)img_error) + "\n");
+		else if(cam_switcher == false){
+			IMAQdxGrab(img_session2, img_frame2, true, NULL);
+			if(img_error2 != IMAQdxErrorSuccess) {
+				DriverStation::ReportError("IMAQdxGrab error: " + std::to_string((long)img_error2) + "\n");
 			} else {
-				imaqDrawShapeOnImage(img_frame, img_frame, { 10, 10, 100, 100 }, DrawMode::IMAQ_DRAW_VALUE, ShapeMode::IMAQ_SHAPE_OVAL, 0.0f);
-				CameraServer::GetInstance()->SetImage(img_frame);
-						}
+				CameraServer::GetInstance()->SetImage(img_frame2);
+			}
 		}
-		SmartDashboard::PutBoolean("camera value", cam_switcher);
 
 		SmartDashboard::PutNumber("accelerometer Z", acceler->GetZ());
 
@@ -209,7 +223,8 @@ private:
 	void DisabledInit() {
 		SmartDashboard::PutData("drive mode", drive_mode_chooser);
 		SmartDashboard::PutString("test", "test");
-		IMAQdxStopAcquisition(img_session);
+		IMAQdxStopAcquisition(img_session1);
+		IMAQdxStopAcquisition(img_session2);
 	}
 };
 
