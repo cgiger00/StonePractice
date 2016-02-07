@@ -5,6 +5,7 @@
 #include "WPILib.h"
 #include "../util/830utilities.h"
 #include "Clamp.h"
+#include "Camera.h"
 
 
 class Robot: public IterativeRobot{
@@ -26,6 +27,7 @@ private:
 	static const int ENCODER_DIO_A = 2;
 	static const int ENCODER_DIO_B = 3;
 
+
 	RobotDrive *drive;
 
 	Clamp * clamp;
@@ -40,6 +42,9 @@ private:
 	VictorSP * flywheel;
 
 	Encoder * encoder;
+
+	CAMERAFEEDS *cameraFeeds;
+
 	enum drive_mode_t { TANK_DRIVE, ARCADE_DRIVE };
 	drive_mode_t drive_mode;
 	// tank drive
@@ -51,13 +56,18 @@ private:
 
 	static constexpr float MOVE_SPEED_LIMIT = 1.0;
 
-	IMAQdxSession img_session1;
+	/*IMAQdxSession img_session1;
 	Image *img_frame1;
 	IMAQdxError img_error1;
 
 	IMAQdxSession img_session2;
 	Image *img_frame2;
-	IMAQdxError img_error2;
+	IMAQdxError img_error2;*/
+
+	const int kCam0Button = 1;
+	const int kCam1Button = 2;
+	const bool kError = false;
+	const bool kOk = true;
 
 	void RobotInit()
 	{
@@ -87,7 +97,7 @@ private:
 		drive_mode_chooser->AddObject("tank", new drive_mode_t(TANK_DRIVE));
 		drive_mode_chooser->AddObject("arcade", new drive_mode_t(ARCADE_DRIVE));
 
-		img_frame1 = imaqCreateImage(IMAQ_IMAGE_RGB, 0);
+		/*img_frame1 = imaqCreateImage(IMAQ_IMAGE_RGB, 0);
 
 		//the camera name (ex "cam0") can be found through the roborio web interface
 		img_session1 = 0;
@@ -109,11 +119,14 @@ private:
 		img_error2 = IMAQdxConfigureGrab(img_session2);
 		if(img_error2 != IMAQdxErrorSuccess) {
 			DriverStation::ReportError("IMAQdxConfigureGrab error: " + std::to_string((long)img_error2) + "\n");
-		}
-
+		}*/
 		acceler = new BuiltInAccelerometer;
 
 		encoder = new Encoder(ENCODER_DIO_A, ENCODER_DIO_B);
+
+		cameraFeeds = new CAMERAFEEDS;
+
+		cameraFeeds->init();
 	}
 
 	void AutonomousInit()
@@ -137,13 +150,13 @@ private:
 
 	void TeleopInit()
 	{
-		IMAQdxStartAcquisition(img_session1);
-		IMAQdxStartAcquisition(img_session2);
+		//IMAQdxStartAcquisition(img_session1);
+		//IMAQdxStartAcquisition(img_session2);
 	}
 
 	void TeleopPeriodic()
 	{
-		bool cam_switcher = false;
+		//bool cam_switcher = false;
 		auto new_mode_p = (drive_mode_t*)drive_mode_chooser->GetSelected();
 		auto new_mode = new_mode_p ? *new_mode_p : ARCADE_DRIVE;
 		if (new_mode != drive_mode)
@@ -154,8 +167,8 @@ private:
 			drive->TankDrive(left_speed, right_speed);
 		}
 		else {
-//			rot_speed = accel(rot_speed, pilot->RightX(), TICKS_TO_ACCEL);
-//			SmartDashboard::PutNumber("rotation speed", rot_speed);
+			rot_speed = accel(rot_speed, pilot->RightX(), TICKS_TO_ACCEL);
+			SmartDashboard::PutNumber("rotation speed", rot_speed);
 			rot_speed = pilot->RightX();
 			move_speed = accel(move_speed, pilot->LeftY(), TICKS_TO_ACCEL);
 			drive->ArcadeDrive(move_speed * MOVE_SPEED_LIMIT, -rot_speed * MOVE_SPEED_LIMIT, false);
@@ -178,7 +191,7 @@ private:
 
 		clamp->update();
 
-		if (pilot->ButtonState(F310Buttons::X)){
+		/*if (pilot->ButtonState(F310Buttons::X)){
 			cam_switcher = true;
 		}
 		else if (pilot->ButtonState(F310Buttons::Y)){
@@ -199,7 +212,7 @@ private:
 			} else {
 				CameraServer::GetInstance()->SetImage(img_frame2);
 			}
-		}
+		} */
 
 		SmartDashboard::PutNumber("accelerometer Z", acceler->GetZ());
 
@@ -213,6 +226,15 @@ private:
 
 		SmartDashboard::PutNumber("Left Trigger:", pilot->LeftTrigger());
 
+		if (pilot->ButtonState(F310Buttons::X)) {
+			cameraFeeds-> changeCam(cameraFeeds->kBtCamFront);
+		}
+		if (pilot->ButtonState(F310Buttons::Y)){
+			cameraFeeds-> changeCam(cameraFeeds->kBtCamBack);
+		}
+
+		cameraFeeds->run();
+
 	}
 
 	void TestPeriodic()
@@ -223,8 +245,9 @@ private:
 	void DisabledInit() {
 		SmartDashboard::PutData("drive mode", drive_mode_chooser);
 		SmartDashboard::PutString("test", "test");
-		IMAQdxStopAcquisition(img_session1);
-		IMAQdxStopAcquisition(img_session2);
+		//IMAQdxStopAcquisition(img_session1);
+		//IMAQdxStopAcquisition(img_session2);
+		cameraFeeds -> end();
 	}
 };
 
