@@ -23,7 +23,7 @@ private:
 	static const int SWORD_SWITCH_DIO = 0;
 	static const int FLY_WHEEL_PWM = 6;
 
-	static const int GYRO_ANALOG = 0;
+	//static const int GYRO_ANALOG = 0;
 	static const int ENCODER_DIO_A = 2;
 	static const int ENCODER_DIO_B = 3;
 
@@ -37,7 +37,7 @@ private:
 	PowerDistributionPanel * pdp;
 
 	BuiltInAccelerometer * acceler;
-	AnalogGyro  * gyro;
+	//Gyro  * gyro;
 
 	VictorSP * flywheel;
 
@@ -55,14 +55,6 @@ private:
 	SendableChooser *drive_mode_chooser;
 
 	static constexpr float MOVE_SPEED_LIMIT = 1.0;
-
-	/*IMAQdxSession img_session1;
-	Image *img_frame1;
-	IMAQdxError img_error1;
-
-	IMAQdxSession img_session2;
-	Image *img_frame2;
-	IMAQdxError img_error2;*/
 
 	const int kCam0Button = 1;
 	const int kCam1Button = 2;
@@ -89,7 +81,7 @@ private:
 
 		pilot = new GamepadF310(0);
 
-		gyro = new AnalogGyro(GYRO_ANALOG);
+		//gyro = new Gyro(GYRO_ANALOG);
 
 		flywheel = new VictorSP(FLY_WHEEL_PWM);
 
@@ -97,29 +89,6 @@ private:
 		drive_mode_chooser->AddObject("tank", new drive_mode_t(TANK_DRIVE));
 		drive_mode_chooser->AddObject("arcade", new drive_mode_t(ARCADE_DRIVE));
 
-		/*img_frame1 = imaqCreateImage(IMAQ_IMAGE_RGB, 0);
-
-		//the camera name (ex "cam0") can be found through the roborio web interface
-		img_session1 = 0;
-		img_error1 = IMAQdxOpenCamera("cam0", IMAQdxCameraControlModeController, &img_session1);
-		if(img_error1 != IMAQdxErrorSuccess) {
-			DriverStation::ReportError("IMAQdxOpenCamera error: " + std::to_string((long)img_error1) + "\n");
-		}
-		img_error1 = IMAQdxConfigureGrab(img_session1);
-		if(img_error1 != IMAQdxErrorSuccess) {
-			DriverStation::ReportError("IMAQdxConfigureGrab error: " + std::to_string((long)img_error1) + "\n");
-		}
-
-		img_frame2 = imaqCreateImage(IMAQ_IMAGE_RGB, 1);
-		img_session2 = 1;
-		img_error2 = IMAQdxOpenCamera("cam1", IMAQdxCameraControlModeController, &img_session2);
-		if(img_error2 != IMAQdxErrorSuccess) {
-			DriverStation::ReportError("IMAQdxOpenCamera error: " + std::to_string((long)img_error2) + "\n");
-		}
-		img_error2 = IMAQdxConfigureGrab(img_session2);
-		if(img_error2 != IMAQdxErrorSuccess) {
-			DriverStation::ReportError("IMAQdxConfigureGrab error: " + std::to_string((long)img_error2) + "\n");
-		}*/
 		acceler = new BuiltInAccelerometer;
 
 		encoder = new Encoder(ENCODER_DIO_A, ENCODER_DIO_B);
@@ -150,13 +119,11 @@ private:
 
 	void TeleopInit()
 	{
-		//IMAQdxStartAcquisition(img_session1);
-		//IMAQdxStartAcquisition(img_session2);
+
 	}
 
 	void TeleopPeriodic()
 	{
-		//bool cam_switcher = false;
 		auto new_mode_p = (drive_mode_t*)drive_mode_chooser->GetSelected();
 		auto new_mode = new_mode_p ? *new_mode_p : ARCADE_DRIVE;
 		if (new_mode != drive_mode)
@@ -176,7 +143,7 @@ private:
 		SmartDashboard::PutBoolean("clamp open", clamp->isOpen());
 		SmartDashboard::PutBoolean("sword in", clamp->isSwordIn());
 
-		SmartDashboard::PutNumber("gyroscope", gyro->GetAngle());
+		//SmartDashboard::PutNumber("gyroscope", gyro->GetAngle());
 
 //		for (uint8 i = 0; i <= 15; ++i)
 //			SmartDashboard::PutNumber(std::string("current #") + std::to_string(i), pdp->GetCurrent(i));
@@ -190,29 +157,6 @@ private:
 		}
 
 		clamp->update();
-
-		/*if (pilot->ButtonState(F310Buttons::X)){
-			cam_switcher = true;
-		}
-		else if (pilot->ButtonState(F310Buttons::Y)){
-			cam_switcher = false;
-		}
-		if(cam_switcher == true){
-			IMAQdxGrab(img_session1, img_frame1, true, NULL);
-			if(img_error1 != IMAQdxErrorSuccess) {
-				DriverStation::ReportError("IMAQdxGrab error: " + std::to_string((long)img_error1) + "\n");
-			} else {
-				CameraServer::GetInstance()->SetImage(img_frame1);
-			}
-		}
-		else if(cam_switcher == false){
-			IMAQdxGrab(img_session2, img_frame2, true, NULL);
-			if(img_error2 != IMAQdxErrorSuccess) {
-				DriverStation::ReportError("IMAQdxGrab error: " + std::to_string((long)img_error2) + "\n");
-			} else {
-				CameraServer::GetInstance()->SetImage(img_frame2);
-			}
-		} */
 
 		SmartDashboard::PutNumber("accelerometer Z", acceler->GetZ());
 
@@ -245,8 +189,6 @@ private:
 	void DisabledInit() {
 		SmartDashboard::PutData("drive mode", drive_mode_chooser);
 		SmartDashboard::PutString("test", "test");
-		//IMAQdxStopAcquisition(img_session1);
-		//IMAQdxStopAcquisition(img_session2);
 		cameraFeeds -> end();
 	}
 };
