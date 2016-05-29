@@ -7,6 +7,7 @@ add_subdirectory(lib830)
 include_directories(src lib830)
 
 add_frc_robot(${PROJECT_NAME} 830
+    src/Camera.cpp
     src/Clamp.cpp
     src/Robot.cpp
 )

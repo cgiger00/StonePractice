@@ -5,6 +5,7 @@
 #include "WPILib.h"
 #include "Lib830.h"
 #include "Clamp.h"
+#include "Camera.h"
 
 using namespace Lib830;
 
@@ -21,6 +22,11 @@ private:
 	static const uint8 SWORD_CLAMP_CHANNEL = 13;
 	static const int CLAMP_SWITCH_DIO = 1;
 	static const int SWORD_SWITCH_DIO = 0;
+	static const int FLY_WHEEL_PWM = 6;
+
+	static const int GYRO_ANALOG = 0;
+	static const int ENCODER_DIO_A = 2;
+	static const int ENCODER_DIO_B = 3;
 
 	RobotDrive *drive;
 
@@ -30,16 +36,25 @@ private:
 
 	PowerDistributionPanel * pdp;
 
+	BuiltInAccelerometer * acceler;
+	Gyro  * gyro;
+
+	VictorSP * flywheel;
+
+	Encoder * encoder;
+
+	CAMERAFEEDS *cameraFeeds;
+
 	enum drive_mode_t { TANK_DRIVE, ARCADE_DRIVE };
 	drive_mode_t drive_mode;
 	// tank drive
 	float left_speed, right_speed;
 	// arcade drive
 	float move_speed, rot_speed;
-	static const int TICKS_TO_ACCEL = 50;
+	static const int TICKS_TO_ACCEL = 10;
 	SelectWidget<drive_mode_t> drive_mode_chooser;
 
-	static constexpr float MOVE_SPEED_LIMIT = 0.6;
+	static constexpr float MOVE_SPEED_LIMIT = 1.0;
 
 	void RobotInit()
 	{
@@ -57,14 +72,25 @@ private:
 				new DigitalInput(SWORD_SWITCH_DIO)
 		);
 
-		pdp= new PowerDistributionPanel;
+		pdp = new PowerDistributionPanel;
 
 		pilot = new GamepadF310(0);
+
+		gyro = new AnalogGyro(GYRO_ANALOG);
+
+		flywheel = new VictorSP(FLY_WHEEL_PWM);
 
 		drive_mode_chooser.AddOption("tank", TANK_DRIVE);
 		drive_mode_chooser.AddOption("arcade", ARCADE_DRIVE, true);
 		drive_mode_chooser.sendToDashboard("drive mode");
 
+		acceler = new BuiltInAccelerometer;
+
+		encoder = new Encoder(ENCODER_DIO_A, ENCODER_DIO_B);
+
+		cameraFeeds = new CAMERAFEEDS;
+
+		cameraFeeds->init();
 	}
 
 	void AutonomousInit()
@@ -88,7 +114,7 @@ private:
 
 	void TeleopInit()
 	{
-		puts("TeleopInit");
+
 	}
 
 	void TeleopPeriodic()
@@ -103,14 +129,17 @@ private:
 			drive->TankDrive(left_speed, right_speed);
 		}
 		else {
-			move_speed = accel(move_speed, pilot->LeftY(), TICKS_TO_ACCEL);
-//			rot_speed = accel(rot_speed, pilot->RightX(), TICKS_TO_ACCEL);
-//			SmartDashboard::PutNumber("rotation speed", rot_speed);
+			rot_speed = accel(rot_speed, pilot->RightX(), TICKS_TO_ACCEL);
+			SmartDashboard::PutNumber("rotation speed", rot_speed);
 			rot_speed = pilot->RightX();
+			move_speed = accel(move_speed, pilot->LeftY(), TICKS_TO_ACCEL);
 			drive->ArcadeDrive(move_speed * MOVE_SPEED_LIMIT, -rot_speed * MOVE_SPEED_LIMIT, false);
 		}
 		SmartDashboard::PutBoolean("clamp open", clamp->isOpen());
 		SmartDashboard::PutBoolean("sword in", clamp->isSwordIn());
+
+		SmartDashboard::PutNumber("gyroscope", gyro->GetAngle());
+
 //		for (uint8 i = 0; i <= 15; ++i)
 //			SmartDashboard::PutNumber(std::string("current #") + std::to_string(i), pdp->GetCurrent(i));
 		SmartDashboard::PutNumber("Current", pdp->GetTotalCurrent());
@@ -123,11 +152,37 @@ private:
 		}
 
 		clamp->update();
+
+		SmartDashboard::PutNumber("accelerometer Z", acceler->GetZ());
+
+		SmartDashboard::PutNumber("Encoder", encoder->Get());
+
+		flywheel->Set(pilot->RightTrigger());
+
+		if (pilot->LeftTrigger() != 0)
+			flywheel->Set(-pilot->LeftTrigger());
+
+
+		SmartDashboard::PutNumber("Left Trigger:", pilot->LeftTrigger());
+
+		if (pilot->ButtonState(GamepadF310::BUTTON_X)) {
+			cameraFeeds-> changeCam(cameraFeeds->kBtCamFront);
+		}
+		if (pilot->ButtonState(GamepadF310::BUTTON_Y)){
+			cameraFeeds-> changeCam(cameraFeeds->kBtCamBack);
+		}
+
+		cameraFeeds->run();
+
 	}
 
 	void TestPeriodic()
 	{
 
+	}
+
+	void DisabledInit() {
+		cameraFeeds -> end();
 	}
 };
 
