@@ -3,8 +3,10 @@
  */
 
 #include "WPILib.h"
-#include "../util/830utilities.h"
+#include "Lib830.h"
 #include "Clamp.h"
+
+using namespace Lib830;
 
 class Robot: public IterativeRobot{
 private:
@@ -35,7 +37,7 @@ private:
 	// arcade drive
 	float move_speed, rot_speed;
 	static const int TICKS_TO_ACCEL = 50;
-	SendableChooser *drive_mode_chooser;
+	SelectWidget<drive_mode_t> drive_mode_chooser;
 
 	static constexpr float MOVE_SPEED_LIMIT = 0.6;
 
@@ -59,10 +61,9 @@ private:
 
 		pilot = new GamepadF310(0);
 
-		drive_mode_chooser = new SendableChooser;
-		drive_mode_chooser->AddObject("tank", new drive_mode_t(TANK_DRIVE));
-		drive_mode_chooser->AddObject("arcade", new drive_mode_t(ARCADE_DRIVE));
-		SmartDashboard::PutData("drive mode", drive_mode_chooser);
+		drive_mode_chooser.AddOption("tank", TANK_DRIVE);
+		drive_mode_chooser.AddOption("arcade", ARCADE_DRIVE, true);
+		drive_mode_chooser.sendToDashboard("drive mode");
 
 	}
 
@@ -87,12 +88,13 @@ private:
 
 	void TeleopInit()
 	{
+		puts("TeleopInit");
 	}
 
 	void TeleopPeriodic()
 	{
-		auto new_mode_p = (drive_mode_t*)drive_mode_chooser->GetSelected();
-		auto new_mode = new_mode_p ? *new_mode_p : ARCADE_DRIVE;
+		drive_mode_t new_mode = drive_mode_chooser.GetSelected();
+		SmartDashboard::PutString("current mode", new_mode == TANK_DRIVE ? "Tank" : "Arcade");
 		if (new_mode != drive_mode)
 			SetDriveMode(new_mode);
 		if (drive_mode == TANK_DRIVE) {
@@ -113,10 +115,10 @@ private:
 //			SmartDashboard::PutNumber(std::string("current #") + std::to_string(i), pdp->GetCurrent(i));
 		SmartDashboard::PutNumber("Current", pdp->GetTotalCurrent());
 
-		if (pilot->ButtonState(F310Buttons::A)) {
+		if (pilot->ButtonState(GamepadF310::BUTTON_A)) {
 			clamp->open();
 		}
-		else if (pilot->ButtonState(F310Buttons::B)){
+		else if (pilot->ButtonState(GamepadF310::BUTTON_B)){
 			clamp->close();
 		}
 
@@ -129,4 +131,4 @@ private:
 	}
 };
 
-START_ROBOT_CLASS(Robot);
+START_ROBOT_CLASS(Robot)
