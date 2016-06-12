@@ -15,7 +15,9 @@
 </div>
 <hr/>
 
-Drive mode: <select id="drive-mode"></select>
+<p>Drive mode: <select id="drive-mode"></select></p>
+
+<p>Gyro: <span id="gyro-angle">?</span> <button id="calibrate-gyro">Calibrate gyro</button></p>
 
 <hr/>
 
@@ -37,6 +39,10 @@ $(document).ready(function(){
     NetworkTables.addGlobalListener(onValueChanged, true);
 
     attachSelectToSendableChooser('#drive-mode', 'drive mode');
+
+    $('#calibrate-gyro').click(function(){
+        NetworkTables.setValue('/SmartDashboard/gyro/calibrate', true);
+    });
 });
 
 
@@ -73,6 +79,9 @@ function onValueChanged(key, value, isNew) {
         // selector. This should work for class names also, not just for ids
         $('#' + NetworkTables.keySelector(key)).text(value);
     }
+
+    if (key == '/SmartDashboard/gyro/angle')
+        $('#gyro-angle').text(Math.round(Number(value) * 1000) / 1000);
 }
 
 </script>
