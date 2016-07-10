@@ -12,21 +12,22 @@ using namespace Lib830;
 class Robot: public IterativeRobot{
 private:
 
-	//PWM pins
-	static const int FRONT_LEFT_PWM = 1;
-	static const int FRONT_RIGHT_PWM = 2;
-	static const int BACK_LEFT_PWM = 3;
-	static const int BACK_RIGHT_PWM = 4;
+	enum PINS {
+		FRONT_LEFT_PWM = 1,
+		FRONT_RIGHT_PWM = 2,
+		BACK_LEFT_PWM = 3,
+		BACK_RIGHT_PWM = 4,
 
-	static const int SWORD_CLAMP_PWM = 5;
-	static const uint8 SWORD_CLAMP_CHANNEL = 13;
-	static const int CLAMP_SWITCH_DIO = 1;
-	static const int SWORD_SWITCH_DIO = 0;
-	static const int FLY_WHEEL_PWM = 6;
+		SWORD_CLAMP_PWM = 5,
+		SWORD_CLAMP_CHANNEL = 13,
+		CLAMP_SWITCH_DIO = 1,
+		SWORD_SWITCH_DIO = 0,
+		FLY_WHEEL_PWM = 6,
 
-	static const int GYRO_ANALOG = 0;
-	static const int ENCODER_DIO_A = 2;
-	static const int ENCODER_DIO_B = 3;
+		GYRO_ANALOG = 0,
+		ENCODER_DIO_A = 2,
+		ENCODER_DIO_B = 3,
+	};
 
 	RobotDrive *drive;
 
@@ -37,7 +38,7 @@ private:
 	PowerDistributionPanel * pdp;
 
 	BuiltInAccelerometer * acceler;
-	Gyro  * gyro;
+	Lib830::AnalogGyro * gyro;
 
 	VictorSP * flywheel;
 
@@ -76,7 +77,7 @@ private:
 
 		pilot = new GamepadF310(0);
 
-		gyro = new AnalogGyro(GYRO_ANALOG);
+		gyro = new Lib830::AnalogGyro(GYRO_ANALOG);
 
 		flywheel = new VictorSP(FLY_WHEEL_PWM);
 
@@ -138,7 +139,7 @@ private:
 		SmartDashboard::PutBoolean("clamp open", clamp->isOpen());
 		SmartDashboard::PutBoolean("sword in", clamp->isSwordIn());
 
-		SmartDashboard::PutNumber("gyroscope", gyro->GetAngle());
+		SmartDashboard::PutData("gyro", gyro);
 
 //		for (uint8 i = 0; i <= 15; ++i)
 //			SmartDashboard::PutNumber(std::string("current #") + std::to_string(i), pdp->GetCurrent(i));
