@@ -51,7 +51,7 @@ private:
 	float left_speed, right_speed;
 	// arcade drive
 	float move_speed, rot_speed;
-	static const int TICKS_TO_ACCEL = 10;
+	static const int TICKS_TO_ACCEL = 15;
 	SelectWidget<drive_mode_t> drive_mode_chooser;
 
 	static constexpr float MOVE_SPEED_LIMIT = 1.0;
