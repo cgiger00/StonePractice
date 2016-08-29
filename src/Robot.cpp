@@ -1,10 +1,10 @@
-/*
- * Code For "Sword In The Stone" Robot
+/*practice code for 2016-2017 season
+ *
+ *
  */
 
 #include "WPILib.h"
 #include "Lib830.h"
-#include "Clamp.h"
 #include "Camera.h"
 
 using namespace Lib830;
@@ -18,12 +18,6 @@ private:
 		BACK_LEFT_PWM = 3,
 		BACK_RIGHT_PWM = 4,
 
-		SWORD_CLAMP_PWM = 5,
-		SWORD_CLAMP_CHANNEL = 13,
-		CLAMP_SWITCH_DIO = 1,
-		SWORD_SWITCH_DIO = 0,
-		FLY_WHEEL_PWM = 6,
-
 		GYRO_ANALOG = 0,
 		ENCODER_DIO_A = 2,
 		ENCODER_DIO_B = 3,
@@ -31,16 +25,12 @@ private:
 
 	RobotDrive * drive;
 
-	Clamp * clamp;
-
 	GamepadF310 * pilot;
 
 	PowerDistributionPanel * pdp;
 
 	BuiltInAccelerometer * acceler;
 	Lib830::AnalogGyro * gyro;
-
-	VictorSP * flywheel;
 
 	Encoder * encoder;
 
@@ -52,6 +42,10 @@ private:
 		drive->ArcadeDrive(-forward, turn, squared);
 	}
 
+	void tankDrive(float forward, float turn, bool squared = false){
+		drive->TankDrive(-forward, turn, squared);
+	}
+
 	void RobotInit()
 	{
 		drive = new RobotDrive(
@@ -60,19 +54,12 @@ private:
 				new Victor(FRONT_RIGHT_PWM),
 				new Victor(BACK_RIGHT_PWM)
 		);
-		clamp = new Clamp(
-				new Victor(SWORD_CLAMP_PWM),
-				new DigitalInput(CLAMP_SWITCH_DIO),
-				new DigitalInput(SWORD_SWITCH_DIO)
-		);
 
 		pdp = new PowerDistributionPanel;
 
 		pilot = new GamepadF310(0);
 
 		gyro = new Lib830::AnalogGyro(GYRO_ANALOG);
-
-		flywheel = new VictorSP(FLY_WHEEL_PWM);
 
 		acceler = new BuiltInAccelerometer;
 
@@ -93,52 +80,38 @@ private:
 
 	}
 
-	void SetDriveMode(drive_mode_t new_mode)
-	{
-		drive_mode = new_mode;
-		left_speed = 0;
-		right_speed = 0;
-		rot_speed = 0;
-		move_speed = 0;
-	}
-
 	void TeleopInit()
 	{
-
+		int drive_mode = 1;
 	}
 
 	void TeleopPeriodic()
 	{
-		rot_speed = accel(rot_speed, pilot->RightX(), TICKS_TO_ACCEL);
+		float targetForward = pilot->LeftY();
+		float turn = pilot->RightX()/1.4;
 
-		rot_speed = pilot->RightX();
+		float forward = accel(previousForward, targetForward, TICKS_TO_FULL_SPEED);
 
-		move_speed = accel(move_speed, pilot->LeftY(), TICKS_TO_ACCEL);
+		previousForward = forward;
 
-		drive->ArcadeDrive(move_speed * MOVE_SPEED_LIMIT, -rot_speed * MOVE_SPEED_LIMIT, false);
+		if (pilot->RightTrigger()){
+			drive_mode = 0;
+		} else if (pilot->LeftTrigger()){
+			drive_mode = 1;
+		}
+
+		if (drive_mode = 0){
+			arcadeDrive(forward, turn, true);
+		} else {
+			tankDrive(forward, turn, true);
+		}
+
 
 		SmartDashboard::PutData("gyro", gyro);
-
-		if (pilot->ButtonState(GamepadF310::BUTTON_A)) {
-			clamp->open();
-		}
-		else if (pilot->ButtonState(GamepadF310::BUTTON_B)){
-			clamp->close();
-		}
-
-		clamp->update();
 
 		SmartDashboard::PutNumber("accelerometer Z", acceler->GetZ());
 
 		SmartDashboard::PutNumber("Encoder", encoder->Get());
-
-		flywheel->Set(pilot->RightTrigger());
-
-		if (pilot->LeftTrigger() != 0)
-			flywheel->Set(-pilot->LeftTrigger());
-
-
-		SmartDashboard::PutNumber("Left Trigger:", pilot->LeftTrigger());
 
 		if (pilot->ButtonState(GamepadF310::BUTTON_X)) {
 			cameraFeeds-> changeCam(cameraFeeds->kBtCamFront);
