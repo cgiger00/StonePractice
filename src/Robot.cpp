@@ -29,11 +29,11 @@ private:
 		ENCODER_DIO_B = 3,
 	};
 
-	RobotDrive *drive;
+	RobotDrive * drive;
 
 	Clamp * clamp;
 
-	GamepadF310 *pilot;
+	GamepadF310 * pilot;
 
 	PowerDistributionPanel * pdp;
 
@@ -44,23 +44,16 @@ private:
 
 	Encoder * encoder;
 
-	CAMERAFEEDS *cameraFeeds;
+	CAMERAFEEDS * cameraFeeds;
 
-	enum drive_mode_t { TANK_DRIVE, ARCADE_DRIVE };
-	drive_mode_t drive_mode;
-	// tank drive
-	float left_speed, right_speed;
-	// arcade drive
-	float move_speed, rot_speed;
 	static const int TICKS_TO_ACCEL = 15;
-	SelectWidget<drive_mode_t> drive_mode_chooser;
 
-	static constexpr float MOVE_SPEED_LIMIT = 1.0;
+	void arcadeDrive(float forward, float turn, bool squared = false){
+		drive->ArcadeDrive(-forward, turn, squared);
+	}
 
 	void RobotInit()
 	{
-		SetDriveMode(ARCADE_DRIVE);
-
 		drive = new RobotDrive(
 				new Victor(FRONT_LEFT_PWM),
 				new Victor(BACK_LEFT_PWM),
@@ -80,10 +73,6 @@ private:
 		gyro = new Lib830::AnalogGyro(GYRO_ANALOG);
 
 		flywheel = new VictorSP(FLY_WHEEL_PWM);
-
-		drive_mode_chooser.AddOption("tank", TANK_DRIVE);
-		drive_mode_chooser.AddOption("arcade", ARCADE_DRIVE, true);
-		drive_mode_chooser.sendToDashboard("drive mode");
 
 		acceler = new BuiltInAccelerometer;
 
@@ -120,30 +109,15 @@ private:
 
 	void TeleopPeriodic()
 	{
-		drive_mode_t new_mode = drive_mode_chooser.GetSelected();
-		SmartDashboard::PutString("current mode", new_mode == TANK_DRIVE ? "Tank" : "Arcade");
-		if (new_mode != drive_mode)
-			SetDriveMode(new_mode);
-		if (drive_mode == TANK_DRIVE) {
-			left_speed = accel(left_speed, pilot->LeftY(), TICKS_TO_ACCEL);
-			right_speed = accel(right_speed, pilot->RightY(), TICKS_TO_ACCEL);
-			drive->TankDrive(left_speed, right_speed);
-		}
-		else {
-			rot_speed = accel(rot_speed, pilot->RightX(), TICKS_TO_ACCEL);
-			SmartDashboard::PutNumber("rotation speed", rot_speed);
-			rot_speed = pilot->RightX();
-			move_speed = accel(move_speed, pilot->LeftY(), TICKS_TO_ACCEL);
-			drive->ArcadeDrive(move_speed * MOVE_SPEED_LIMIT, -rot_speed * MOVE_SPEED_LIMIT, false);
-		}
-		SmartDashboard::PutBoolean("clamp open", clamp->isOpen());
-		SmartDashboard::PutBoolean("sword in", clamp->isSwordIn());
+		rot_speed = accel(rot_speed, pilot->RightX(), TICKS_TO_ACCEL);
+
+		rot_speed = pilot->RightX();
+
+		move_speed = accel(move_speed, pilot->LeftY(), TICKS_TO_ACCEL);
+
+		drive->ArcadeDrive(move_speed * MOVE_SPEED_LIMIT, -rot_speed * MOVE_SPEED_LIMIT, false);
 
 		SmartDashboard::PutData("gyro", gyro);
-
-//		for (uint8 i = 0; i <= 15; ++i)
-//			SmartDashboard::PutNumber(std::string("current #") + std::to_string(i), pdp->GetCurrent(i));
-		SmartDashboard::PutNumber("Current", pdp->GetTotalCurrent());
 
 		if (pilot->ButtonState(GamepadF310::BUTTON_A)) {
 			clamp->open();
