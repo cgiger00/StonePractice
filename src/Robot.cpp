@@ -24,6 +24,10 @@ private:
 	};
 
 	RobotDrive * drive;
+	Victor * frontLeft;
+	Victor * backLeft;
+	Victor * frontRight;
+	Victor * backRight;
 
 	GamepadF310 * pilot;
 
