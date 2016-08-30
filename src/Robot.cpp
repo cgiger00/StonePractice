@@ -7,8 +7,6 @@
 #include "Lib830.h"
 #include "Camera.h"
 
-using namespace Lib830;
-
 #include "RobotDrive.h"
 
 using namespace Lib830;
