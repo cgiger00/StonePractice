@@ -9,30 +9,43 @@
 
 using namespace Lib830;
 
-class Robot: public IterativeRobot{
-private:
+#include "RobotDrive.h"
 
-	enum PINS {
-		FRONT_LEFT_PWM = 1,
-		FRONT_RIGHT_PWM = 2,
-		BACK_LEFT_PWM = 3,
-		BACK_RIGHT_PWM = 4,
+using namespace Lib830;
 
-		GYRO_ANALOG = 0,
-		ENCODER_DIO_A = 2,
-		ENCODER_DIO_B = 3,
-	};
+class Robot: public IterativeRobot
+{
 
-	RobotDrive * drive;
-	Victor * frontLeft;
-	Victor * backLeft;
-	Victor * frontRight;
-	Victor * backRight;
+public:
+	enum Mode{ TANK_DRIVE, ARCADE_DRIVE };	
+
+private: 
+
+	static const int LEFT_PWM_ONE = 0;
+	static const int LEFT_PWM_TWO = 4;
+	static const int RIGHT_PWM_ONE = 1;
+	static const int RIGHT_PWM_TWO = 3;
+	
+	static const int GYRO = 5;
+	static const int ENCODER_A = 6;
+	static const int ENCODER_B = 7;
+
 
 	GamepadF310 * pilot;
+	GamepadF310 * copilot;
+
+	RobotDrive * drive;
+
+	VictorSP * frontLeft;
+	VictorSP * backLeft;
+	VictorSP * frontRight;
+	VictorSP * backRight;
+
+	SendableChooser * modeChooser;
+	Mode driveMode;
 
 	PowerDistributionPanel * pdp;
-
+	
 	BuiltInAccelerometer * acceler;
 	Lib830::AnalogGyro * gyro;
 
@@ -40,34 +53,33 @@ private:
 
 	CAMERAFEEDS * cameraFeeds;
 
-	static const int TICKS_TO_ACCEL = 15;
+	static const int TICKS_TO_FULL_SPEED = 15;
+	
+	void RobotInit() {
 
-	void arcadeDrive(float forward, float turn, bool squared = false){
-		drive->ArcadeDrive(-forward, turn, squared);
-	}
-
-	void tankDrive(float forward, float turn, bool squared = false){
-		drive->TankDrive(-forward, turn, squared);
-	}
-
-	void RobotInit()
-	{
 		drive = new RobotDrive(
-				new Victor(FRONT_LEFT_PWM),
-				new Victor(BACK_LEFT_PWM),
-				new Victor(FRONT_RIGHT_PWM),
-				new Victor(BACK_RIGHT_PWM)
+			new VictorSP(LEFT_PWM_ONE),
+			new VictorSP(LEFT_PWM_TWO),
+			new VictorSP(RIGHT_PWM_ONE),
+			new VictorSP(RIGHT_PWM_TWO)
 		);
 
-		pdp = new PowerDistributionPanel;
-
 		pilot = new GamepadF310(0);
+		copilot = new GamepadF310(1);
 
-		gyro = new Lib830::AnalogGyro(GYRO_ANALOG);
+		pdp = new PowerDistributionPanel();
+
+		modeChooser = new SendableChooser();
+		modeChooser-> AddDefault("Arcade Drive", new Mode(ARCADE_DRIVE));
+		modeChooser-> AddObject("Tank Drive", new Mode(TANK_DRIVE));
+
+		SmartDashboard::PutData("Moder Chooser", modeChooser);		
+		
+		gyro = new Lib830::AnalogGyro(GYRO);
 
 		acceler = new BuiltInAccelerometer;
 
-		encoder = new Encoder(ENCODER_DIO_A, ENCODER_DIO_B);
+		encoder = new Encoder(ENCODER_A, ENCODER_B);
 
 		cameraFeeds = new CAMERAFEEDS;
 
@@ -86,30 +98,27 @@ private:
 
 	void TeleopInit()
 	{
-		int drive_mode = 1;
+		float previous_forward = 0;
 	}
 
 	void TeleopPeriodic()
 	{
-		float targetForward = pilot->LeftY();
-		float turn = pilot->RightX()/1.4;
+		switch(driveMode) {
+			case TANK_DRIVE:
+				float leftforward = accel(leftforward, pilot->LeftY(), TICKS_TO_FULL_SPEED);
+				float rightforward = accel(leftforward, pilot->RightY(), TICKS_TO_FULL_SPEED);
+				drive->TankDrive(leftforward,rightforward,true);
+				break
 
-		float forward = accel(previousForward, targetForward, TICKS_TO_FULL_SPEED);
+			case ARCADE_DRIVE:
 
-		previousForward = forward;
+			default: 
+				float targetForward = pilot ->LeftY();
+				float turn = pilot->RightX()/1.4;
 
-		if (pilot->RightTrigger()){
-			drive_mode = 0;
-		} else if (pilot->LeftTrigger()){
-			drive_mode = 1;
-		}
-
-		if (drive_mode = 0){
-			arcadeDrive(forward, turn, true);
-		} else {
-			tankDrive(forward, turn, true);
-		}
-
+				float forward = accel(previous_forward, targetForward, TICKS_TO_FULL_SPEED);
+				drive->ArcadeDrive(forward, turn, true);
+				break
 
 		SmartDashboard::PutData("gyro", gyro);
 
@@ -135,6 +144,11 @@ private:
 
 	void DisabledInit() {
 		cameraFeeds -> end();
+	}
+	
+	void DisabledPeriodic {
+		driveMode = modeChooser->GetSelected() ? *(Mode*)modeChooser->GetSelected() : ARCADE_DRIVE;
+		//not quite sure about this, I think it's just a default 
 	}
 };
 
