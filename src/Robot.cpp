@@ -1,4 +1,4 @@
-/*practice code for 2016-2017 season
+/*practice code for 2016-2017 preseason
  *
  *
  */
@@ -6,7 +6,6 @@
 #include "WPILib.h"
 #include "Lib830.h"
 #include "Camera.h"
-
 #include "RobotDrive.h"
 
 using namespace Lib830;
@@ -55,6 +54,7 @@ private:
 	//cameras yay
 	CAMERAFEEDS * cameraFeeds;
 
+	//speed changer
 	static const int TICKS_TO_FULL_SPEED = 15;
 	
 	void RobotInit() {
@@ -81,14 +81,11 @@ private:
 		
 		//declaring all our sensors
 		gyro = new Lib830::AnalogGyro(GYRO);
-
 		acceler = new BuiltInAccelerometer;
-
 		encoder = new Encoder(ENCODER_A, ENCODER_B);
 
 		//declaring camera stuff
 		cameraFeeds = new CAMERAFEEDS;
-
 		cameraFeeds->init();
 	}
 
@@ -111,10 +108,12 @@ private:
 	{
 		//switching between the different drive modes (Tank, Arcade)
 		switch(driveMode) {
+
 			//tank drive
 			case TANK_DRIVE:
 				float leftforward = accel(leftforward, pilot->LeftY(), TICKS_TO_FULL_SPEED);
 				float rightforward = accel(leftforward, pilot->RightY(), TICKS_TO_FULL_SPEED);
+
 				drive->TankDrive(leftforward,rightforward,true);
 				break;
 
@@ -123,7 +122,10 @@ private:
 				float targetForward = pilot ->LeftY();
 				float turn = pilot->RightX()/1.4;
 				float forward = accel(previous_forward, targetForward, TICKS_TO_FULL_SPEED);
+
 				drive->ArcadeDrive(forward, turn, true);
+
+				previous_forward = forward;
 				break;
 
 		//putting data on the smart dashboard
